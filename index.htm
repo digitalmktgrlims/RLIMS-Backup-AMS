@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RLIMS - Attendance Management System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel Operations -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+
+    <!-- Header -->
+    <header class="bg-blue-900 text-white py-6 shadow-md">
+        <div class="container mx-auto px-6">
+            <h1 class="text-3xl font-bold">R L Institute of Management Studies | 2026-27 </h1>
+            <p class="text-blue-200 text-sm mt-1">Backup - Attendance Management System - MBA I Year & MBA II Year | ODD Semester</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-gray-300 bg-white rounded-t-lg shadow-sm overflow-x-auto">
+            <button onclick="switchTab('attendanceTab')" id="btn-attendanceTab" class="tab-btn px-6 py-3 font-semibold text-blue-900 border-b-2 border-blue-900 whitespace-nowrap">Mark Attendance</button>
+            <button onclick="switchTab('studentTab')" id="btn-studentTab" class="tab-btn px-6 py-3 font-semibold text-gray-500 hover:text-blue-900 whitespace-nowrap">Student Roster / Import</button>
+            <button onclick="switchTab('staffTab')" id="btn-staffTab" class="tab-btn px-6 py-3 font-semibold text-gray-500 hover:text-blue-900 whitespace-nowrap">Staff Bulk Import</button>
+            <button onclick="switchTab('driveTab')" id="btn-driveTab" class="tab-btn px-6 py-3 font-semibold text-gray-500 hover:text-blue-900 whitespace-nowrap">Google Drive Sync</button>
+        </div>
+
+        <div class="bg-white p-6 rounded-b-lg shadow-md min-h-[500px]">
+
+            <!-- TAB 1: MARK ATTENDANCE -->
+            <div id="attendanceTab" class="tab-content">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Daily Attendance Entry</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 bg-gray-50 p-4 rounded-lg border">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Academic Year</label>
+                        <select id="attYear" onchange="handleYearChange()" class="w-full border rounded px-3 py-2 bg-white">
+                            <option value="MBA I Year">MBA I Year</option>
+                            <option value="MBA II Year">MBA II Year</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Subject / Activity</label>
+                        <select id="attSubject" onchange="handleSubjectChange()" class="w-full border rounded px-3 py-2 bg-white">
+                            <!-- Dynamically populated -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1" id="sectionLabel">Section / Specialization</label>
+                        <select id="attSection" class="w-full border rounded px-3 py-2 bg-white">
+                            <!-- Dynamically populated -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Hour / Period</label>
+                        <select id="attHour" class="w-full border rounded px-3 py-2 bg-white font-semibold">
+                            <option value="1">Hour 1</option>
+                            <option value="2">Hour 2</option>
+                            <option value="3">Hour 3</option>
+                            <option value="4">Hour 4</option>
+                            <option value="5">Hour 5</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Faculty / Coordinator</label>
+                        <input type="text" id="attFaculty" placeholder="Faculty Name" class="w-full border rounded px-3 py-2 bg-white text-gray-800 font-medium">
+                    </div>
+
+                    <div class="md:col-span-5 grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Date</label>
+                            <input type="date" id="attDate" class="w-full border rounded px-3 py-2 bg-white">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="loadStudentRoster()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-semibold py-2 px-4 rounded shadow">
+                                Load Student Roster
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student List Table -->
+                <div id="rosterContainer" class="hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-3 gap-2">
+                        <h3 class="text-lg font-bold text-gray-700" id="rosterHeader">Student Roster</h3>
+                        <div class="space-x-2">
+                            <button onclick="markAll('Present')" class="text-xs bg-green-100 text-green-800 px-3 py-1.5 rounded font-semibold hover:bg-green-200">Mark All Present</button>
+                            <button onclick="markAll('Absent')" class="text-xs bg-red-100 text-red-800 px-3 py-1.5 rounded font-semibold hover:bg-red-200">Mark All Absent</button>
+                            <button onclick="markAll('OD')" class="text-xs bg-amber-100 text-amber-800 px-3 py-1.5 rounded font-semibold hover:bg-amber-200">Mark All OD</button>
+                        </div>
+                    </div>
+
+                    <table class="w-full border-collapse border border-gray-200 mb-6">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-sm font-semibold text-gray-700">
+                                <th class="border p-3 w-16 text-center">S.No</th>
+                                <th class="border p-3 w-1/6">Roll No</th>
+                                <th class="border p-3">Student Name</th>
+                                <th class="border p-3 text-center w-2/5">Attendance Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentRosterBody"></tbody>
+                    </table>
+
+                    <div class="flex flex-wrap gap-4">
+                        <button onclick="saveAndExportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded shadow flex items-center gap-2">
+                            <span>📥</span> Save Daily Entry as Excel (.xlsx)
+                        </button>
+                        <button onclick="uploadToDrive()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded shadow flex items-center gap-2">
+                            <span>☁️</span> Direct Upload to Google Drive
+                        </button>
+                    </div>
+                </div>
+
+                <div id="noRosterMsg" class="text-center py-10 text-gray-500">
+                    Select Academic Year, Subject/Activity, Section, and Hour, then click "Load Student Roster" to begin.
+                </div>
+            </div>
+
+            <!-- TAB 2: STUDENT ROSTER / BULK IMPORT -->
+            <div id="studentTab" class="tab-content hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-2">Student Database & Bulk Import</h2>
+                <p class="text-sm text-gray-600 mb-4">View current active students or upload a new Excel/CSV file to update student rosters.</p>
+
+                <div class="mb-6">
+                    <input type="file" id="studentFileInput" accept=".csv, .xlsx, .xls" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+
+                <div id="studentPreviewContainer" class="hidden mb-6">
+                    <h3 class="font-bold text-gray-700 mb-2">New Import Preview:</h3>
+                    <div class="max-h-60 overflow-y-auto border rounded mb-4">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 sticky top-0">
+                                <tr id="studentPreviewHeader"></tr>
+                            </thead>
+                            <tbody id="studentPreviewBody"></tbody>
+                        </table>
+                    </div>
+                    <button onclick="confirmStudentImport()" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded">Confirm Student Import</button>
+                </div>
+
+                <h3 class="font-bold text-gray-700 mb-2">Current Loaded Students (<span id="totalStudentsCount">0</span>)</h3>
+                <div class="max-h-96 overflow-y-auto border rounded">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-100 sticky top-0">
+                            <tr>
+                                <th class="p-2 border">Roll No</th>
+                                <th class="p-2 border">Name</th>
+                                <th class="p-2 border">Year</th>
+                                <th class="p-2 border">Section / Specialization</th>
+                            </tr>
+                        </thead>
+                        <tbody id="currentStudentsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 3: STAFF BULK IMPORT -->
+            <div id="staffTab" class="tab-content hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-2">Staff & Subject Mapping</h2>
+                <p class="text-sm text-gray-600 mb-4">Upload faculty details mapped to subjects and academic year.</p>
+
+                <div class="bg-blue-50 border-l-4 border-blue-800 p-4 mb-6 text-sm text-blue-900">
+                    <p class="font-bold mb-1">Required File Columns:</p>
+                    <code class="bg-white px-2 py-1 rounded border">Staff_ID</code>,
+                    <code class="bg-white px-2 py-1 rounded border">Staff_Name</code>,
+                    <code class="bg-white px-2 py-1 rounded border">Subject</code>,
+                    <code class="bg-white px-2 py-1 rounded border">Year</code> (<code>MBA I Year</code> / <code>MBA II Year</code>)
+                </div>
+
+                <div class="mb-6">
+                    <input type="file" id="staffFileInput" accept=".csv, .xlsx, .xls" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+
+                <div id="staffPreviewContainer" class="hidden">
+                    <h3 class="font-bold text-gray-700 mb-2">Data Preview:</h3>
+                    <div class="max-h-60 overflow-y-auto border rounded mb-4">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 sticky top-0">
+                                <tr id="staffPreviewHeader"></tr>
+                            </thead>
+                            <tbody id="staffPreviewBody"></tbody>
+                        </table>
+                    </div>
+                    <button onclick="confirmStaffImport()" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-6 rounded">Confirm Staff Import</button>
+                </div>
+            </div>
+
+            <!-- TAB 4: GOOGLE DRIVE LINK -->
+            <div id="driveTab" class="tab-content hidden">
+                <h2 class="text-xl font-bold text-gray-800 mb-2">Google Drive Integration</h2>
+                <p class="text-sm text-gray-600 mb-4">Connected Google Apps Script Web App Endpoint for direct cloud exports.</p>
+
+                <div class="bg-gray-50 p-4 rounded border space-y-4 max-w-2xl">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Google Apps Script Web App URL</label>
+                        <input type="text" id="scriptUrl" class="w-full border rounded px-3 py-2 text-sm">
+                    </div>
+                    <button onclick="saveDriveSettings()" class="bg-blue-900 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded text-sm">Update Integration URL</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzCJ1z9pKVIBG0Me8NjvEV9QfgRlaI9JdW2P3reyN0wpuSukLGzIUuBmCF_B43iNv2a5A/exec";
+
+        // Common Activities List
+        const COMMON_ACTIVITIES = ["French", "Hindi", "Library", "PET", "Mentoring", "Guest Lecture", "IV", "Seminar", "Presentation", "Outbound Learning", "Others", "Power BI Training", "Microsoft Excel Training"];
+
+        // Subject & Faculty Database
+        const COURSE_MAPPING = {
+            "MBA I Year": [
+                { subject: "Financial reporting and Managerial Decision", faculty: "Dr Subramanian", type: "General", section: "Section A" },
+                { subject: "Behavioural Dynamics", faculty: "Dr Pugalanthi", type: "General", section: "Section A" },
+                { subject: "Circular economy", faculty: "Dr Abraham", type: "General", section: "Section A" },
+                { subject: "Data Decision", faculty: "Dr Sivajothi", type: "General", section: "Section A" },
+                { subject: "Legal Framework", faculty: "Dr Karthik Babu", type: "General", section: "Section A" },
+                { subject: "Digital Leadership", faculty: "Dr Sekar", type: "General", section: "Section A" },
+                { subject: "Professional Executive Grooming", faculty: "Prof Selvam", type: "General", section: "Section A" }
+            ],
+            "MBA II Year": [
+                // Core Courses (Combined for all specializations)
+                { subject: "Strategic Management", faculty: "Dr Pugalanthi", type: "Core", section: "Combined" },
+                { subject: "Entrepreneurship", faculty: "Dr Sekar", type: "Core", section: "Combined" },
+                { subject: "Business Optimisation", faculty: "Dr Karthik Babu", type: "Core", section: "Combined" },
+
+                // Electives - Digital Business
+                { subject: "Digital Banking", faculty: "Dr Abraham", type: "Elective", section: "Digital Business" },
+                { subject: "Fintech& Block chain", faculty: "Dr Subramanian", type: "Elective", section: "Digital Business" },
+                { subject: "Digital Marketing", faculty: "Mr Prashanth", type: "Elective", section: "Digital Business" },
+                { subject: "Cyber security", faculty: "Dr Sekar", type: "Elective", section: "Digital Business" },
+                { subject: "Integrated Marketing", faculty: "Dr Pugalanthi", type: "Elective", section: "Digital Business" },
+
+                // Electives - Business Analytics
+                { subject: "Business Forecasting with Machine learning", faculty: "Dr Karthik Babu", type: "Elective", section: "Business Analytics" },
+                { subject: "Financial analytics", faculty: "Prof Selvam", type: "Elective", section: "Business Analytics" },
+                { subject: "Big data Analytics", faculty: "Dr Sivajothi", type: "Elective", section: "Business Analytics" },
+                { subject: "Python", faculty: "Dr Sivajothi", type: "Elective", section: "Business Analytics" },
+                { subject: "Risk & Fraud analytics", faculty: "Dr Subramanian", type: "Elective", section: "Business Analytics" },
+
+                // Electives - General Management
+                { subject: "Strategic Brand Management", faculty: "Dr Pugalanthi", type: "Elective", section: "General Management" },
+                { subject: "International Marketing", faculty: "Dr Karthik Babu", type: "Elective", section: "General Management" },
+                { subject: "Mental Health", faculty: "Dr Abraham", type: "Elective", section: "General Management" },
+                { subject: "Supply chain", faculty: "Dr Selvam", type: "Elective", section: "General Management" },
+                { subject: "Crisis Leadership", faculty: "Dr Subramanian", type: "Elective", section: "General Management" }
+            ]
+        };
+
+        // Initial Student Dataset
+        const INITIAL_STUDENTS = [
+            // --- MBA I YEAR | SECTION A ---
+            { Roll_No: "26501", Student_Name: "DEECKSITHA AP", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26502", Student_Name: "HARINI S", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26504", Student_Name: "KAVINIKA M", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26505", Student_Name: "MAHALAKSHMI S", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26506", Student_Name: "SANTHOSHINI S", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26507", Student_Name: "SOUNDARIYA K", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26509", Student_Name: "SUKI SIVARANJANI M", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26510", Student_Name: "Asuthosh Kumar T K", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26512", Student_Name: "HARISH SATHYA K A", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26514", Student_Name: "KARTHIKEYAN H", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26517", Student_Name: "Manoj T", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26518", Student_Name: "NAGARAJAN N", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26519", Student_Name: "PRASANTH Y", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26525", Student_Name: "SHANMUGARAJ G", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26526", Student_Name: "SHIRISH KUMAR S", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26527", Student_Name: "SHYLESH KISHORE M", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26532", Student_Name: "SANJAY S", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26533", Student_Name: "VISHNU P", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26534", Student_Name: "BHUVANESHWARI L", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26535", Student_Name: "KISHORERAJ S", Year: "MBA I Year", Section_Specialization: "Section A" },
+            { Roll_No: "26536", Student_Name: "MOHAMED ASHIK N", Year: "MBA I Year", Section_Specialization: "Section A" },
+
+            // --- MBA I YEAR | SECTION B ---
+            { Roll_No: "26503", Student_Name: "HARRINE S", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26508", Student_Name: "SOWMIYA KARTHIGA S", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26511", Student_Name: "DEEPAKKUMAR R", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26513", Student_Name: "HEMA CHANDRAN V", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26515", Student_Name: "KARUPPASAMY S", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26516", Student_Name: "KATHEESWAR", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26520", Student_Name: "RISHIKESH P", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26522", Student_Name: "Sakthi Praveen Raj M", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26523", Student_Name: "SAKTHIVEL KUMARAN P", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26524", Student_Name: "SAMRITHEESH L", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26528", Student_Name: "SIVAKUMAR A", Year: "MBA I Year", Section_Specialization: "Section B" },
+            { Roll_No: "26531", Student_Name: "VISHAL CV", Year: "MBA I Year", Section_Specialization: "Section B" },
+
+            // --- MBA II YEAR | General Management ---
+            { Roll_No: "25501", Student_Name: "Dharshini S", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25504", Student_Name: "Shri Varshini V", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25506", Student_Name: "Amuthavan N", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25508", Student_Name: "Balaji S", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25510", Student_Name: "Dharun Kishore M", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25511", Student_Name: "Dinesh Kumar M", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25512", Student_Name: "Jadan Harry J", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25513", Student_Name: "Kamarul Hassan A", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25515", Student_Name: "Mahesh S", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25516", Student_Name: "Manoj Bala J", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25519", Student_Name: "Rafeeq Raja C", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25520", Student_Name: "Sakthivel A", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25523", Student_Name: "Sridharan M", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25526", Student_Name: "Venkatesh Prasad R", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25531", Student_Name: "Sharmila Devi B V", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25533", Student_Name: "Amirtha T", Year: "MBA II Year", Section_Specialization: "General Management" },
+            { Roll_No: "25535", Student_Name: "Sakthi A", Year: "MBA II Year", Section_Specialization: "General Management" },
+
+            // --- MBA II YEAR | Digital Business ---
+            { Roll_No: "25503", Student_Name: "Sarika Jeya Sri J J", Year: "MBA II Year", Section_Specialization: "Digital Business" },
+            { Roll_No: "25509", Student_Name: "Dharshan A", Year: "MBA II Year", Section_Specialization: "Digital Business" },
+            { Roll_No: "25514", Student_Name: "Karuppasamy K", Year: "MBA II Year", Section_Specialization: "Digital Business" },
+            { Roll_No: "25517", Student_Name: "Mukesh J", Year: "MBA II Year", Section_Specialization: "Digital Business" },
+            { Roll_No: "25521", Student_Name: "Senbaga Guru Nivas J", Year: "MBA II Year", Section_Specialization: "Digital Business" },
+            { Roll_No: "25522", Student_Name: "Sreenivasan V", Year: "MBA II Year", Section_Specialization: "Digital Business" },
+            { Roll_No: "25525", Student_Name: "Tarun Naidu", Year: "MBA II Year", Section_Specialization: "Digital Business" },
+            { Roll_No: "25530", Student_Name: "Sudharsan S", Year: "MBA II Year", Section_Specialization: "Digital Business" },
+            { Roll_No: "25532", Student_Name: "Arul Prasanth D", Year: "MBA II Year", Section_Specialization: "Digital Business" },
+            { Roll_No: "25537", Student_Name: "Azhagumuthu K", Year: "MBA II Year", Section_Specialization: "Digital Business" },
+
+            // --- MBA II YEAR | Business Analytics ---
+            { Roll_No: "25502", Student_Name: "Janani M", Year: "MBA II Year", Section_Specialization: "Business Analytics" },
+            { Roll_No: "25505", Student_Name: "Thredha S", Year: "MBA II Year", Section_Specialization: "Business Analytics" },
+            { Roll_No: "25507", Student_Name: "Ananthan M", Year: "MBA II Year", Section_Specialization: "Business Analytics" },
+            { Roll_No: "25518", Student_Name: "Naveen raj B", Year: "MBA II Year", Section_Specialization: "Business Analytics" },
+            { Roll_No: "25524", Student_Name: "Surya U", Year: "MBA II Year", Section_Specialization: "Business Analytics" },
+            { Roll_No: "25527", Student_Name: "Vijay Karthik", Year: "MBA II Year", Section_Specialization: "Business Analytics" },
+            { Roll_No: "25528", Student_Name: "Prayaga Bivin", Year: "MBA II Year", Section_Specialization: "Business Analytics" },
+            { Roll_No: "25529", Student_Name: "Veera Gokul G", Year: "MBA II Year", Section_Specialization: "Business Analytics" },
+            { Roll_No: "25536", Student_Name: "Teja Aravind K", Year: "MBA II Year", Section_Specialization: "Business Analytics" },
+            { Roll_No: "25534", Student_Name: "Udhyakumar B", Year: "MBA II Year", Section_Specialization: "Business Analytics" }
+        ];
+
+        // State Management
+        let studentsData = JSON.parse(localStorage.getItem('rlims_students_v5')) || INITIAL_STUDENTS;
+        let parsedStudentImport = [];
+        let parsedStaffImport = [];
+
+        localStorage.setItem('rlims_students_v5', JSON.stringify(studentsData));
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('attDate').valueAsDate = new Date();
+
+            const activeUrl = localStorage.getItem('rlims_drive_url') || DEFAULT_SCRIPT_URL;
+            document.getElementById('scriptUrl').value = activeUrl;
+            localStorage.setItem('rlims_drive_url', activeUrl);
+
+            handleYearChange();
+            renderLoadedStudents();
+        });
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('text-blue-900', 'border-b-2', 'border-blue-900');
+                el.classList.add('text-gray-500');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('text-blue-900', 'border-b-2', 'border-blue-900');
+            activeBtn.classList.remove('text-gray-500');
+        }
+
+        // Handle Year Switch & Dynamic Subject Population
+        function handleYearChange() {
+            const year = document.getElementById('attYear').value;
+            const subjSelect = document.getElementById('attSubject');
+            subjSelect.innerHTML = '';
+
+            const courses = COURSE_MAPPING[year] || [];
+
+            // Group 1: Subject Courses
+            const courseGroup = document.createElement('optgroup');
+            courseGroup.label = "Subject Courses";
+
+            if (year === "MBA II Year") {
+                const coreGroup = document.createElement('optgroup');
+                coreGroup.label = "Core Courses (Combined)";
+                const electiveGroup = document.createElement('optgroup');
+                electiveGroup.label = "Electives";
+
+                courses.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.subject;
+                    opt.textContent = c.subject;
+                    if (c.type === "Core") {
+                        coreGroup.appendChild(opt);
+                    } else {
+                        electiveGroup.appendChild(opt);
+                    }
+                });
+                subjSelect.appendChild(coreGroup);
+                subjSelect.appendChild(electiveGroup);
+            } else {
+                courses.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.subject;
+                    opt.textContent = c.subject;
+                    courseGroup.appendChild(opt);
+                });
+                subjSelect.appendChild(courseGroup);
+            }
+
+            // Group 2: Common Entries (Guest Lecture, Seminar, IV, etc.)
+            const commonGroup = document.createElement('optgroup');
+            commonGroup.label = "Common Events / Activities";
+            COMMON_ACTIVITIES.forEach(act => {
+                const opt = document.createElement('option');
+                opt.value = act;
+                opt.textContent = act;
+                commonGroup.appendChild(opt);
+            });
+            subjSelect.appendChild(commonGroup);
+
+            handleSubjectChange();
+        }
+
+        // Handle Subject Selection Change
+        function handleSubjectChange() {
+            const year = document.getElementById('attYear').value;
+            const selectedSubj = document.getElementById('attSubject').value;
+            const secSelect = document.getElementById('attSection');
+            const secLabel = document.getElementById('sectionLabel');
+            const facultyInput = document.getElementById('attFaculty');
+            secSelect.innerHTML = '';
+
+            const isCommonActivity = COMMON_ACTIVITIES.includes(selectedSubj);
+
+            if (isCommonActivity) {
+                facultyInput.value = "";
+                facultyInput.placeholder = "Enter Coordinator / Speaker";
+                facultyInput.readOnly = false;
+            } else {
+                facultyInput.readOnly = true;
+                const courseList = COURSE_MAPPING[year] || [];
+                const courseInfo = courseList.find(c => c.subject === selectedSubj);
+                facultyInput.value = courseInfo ? courseInfo.faculty : '';
+            }
+
+            if (year === "MBA I Year") {
+                secLabel.textContent = "Section";
+                ["Section A", "Section B", "Combined"].forEach(sec => {
+                    if (sec === "Combined" && !isCommonActivity) return; // Only allow combined for common events in Year 1
+                    const opt = document.createElement('option');
+                    opt.value = sec;
+                    opt.textContent = sec;
+                    secSelect.appendChild(opt);
+                });
+            } else if (year === "MBA II Year") {
+                secLabel.textContent = "Specialization / Entry";
+                const courseList = COURSE_MAPPING[year] || [];
+                const courseInfo = courseList.find(c => c.subject === selectedSubj);
+
+                if (isCommonActivity || (courseInfo && courseInfo.type === "Core")) {
+                    const opt = document.createElement('option');
+                    opt.value = "Combined";
+                    opt.textContent = "Combined (All Specializations)";
+                    secSelect.appendChild(opt);
+                } else {
+                    ["General Management", "Digital Business", "Business Analytics", "Combined"].forEach(spec => {
+                        const opt = document.createElement('option');
+                        opt.value = spec;
+                        opt.textContent = spec;
+                        if (courseInfo && courseInfo.section === spec) {
+                            opt.selected = true;
+                        }
+                        secSelect.appendChild(opt);
+                    });
+                }
+            }
+        }
+
+        // Load Roster into UI Table
+        function loadStudentRoster() {
+            const year = document.getElementById('attYear').value;
+            const sec = document.getElementById('attSection').value;
+            const subject = document.getElementById('attSubject').value;
+            const hour = document.getElementById('attHour').value;
+
+            let filtered = [];
+            if (sec === "Combined") {
+                filtered = studentsData.filter(s => s.Year === year);
+            } else {
+                filtered = studentsData.filter(s =>
+                    s.Year === year &&
+                    s.Section_Specialization.toLowerCase() === sec.toLowerCase()
+                );
+            }
+
+            const body = document.getElementById('studentRosterBody');
+            body.innerHTML = '';
+
+            if (filtered.length === 0) {
+                alert(`No students found for ${year} - ${sec}.`);
+                document.getElementById('rosterContainer').classList.add('hidden');
+                document.getElementById('noRosterMsg').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('rosterHeader').textContent = `${year} | ${subject} | ${sec} | Hour ${hour} (${filtered.length} Students)`;
+
+            filtered.forEach((s, idx) => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-gray-50 border-b";
+                row.innerHTML = `
+                    <td class="p-3 text-center text-gray-500 font-mono text-xs">${idx + 1}</td>
+                    <td class="p-3 font-semibold text-gray-700">${s.Roll_No}</td>
+                    <td class="p-3 font-medium">${s.Student_Name}</td>
+                    <td class="p-3 text-center space-x-4 sm:space-x-6">
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="status_${s.Roll_No}" value="Present" checked class="w-4 h-4 text-green-600 focus:ring-green-500">
+                            <span class="ml-1 text-xs text-green-700 font-semibold">Present</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="status_${s.Roll_No}" value="Absent" class="w-4 h-4 text-red-600 focus:ring-red-500">
+                            <span class="ml-1 text-xs text-red-700 font-semibold">Absent</span>
+                        </label>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="radio" name="status_${s.Roll_No}" value="OD" class="w-4 h-4 text-amber-600 focus:ring-amber-500">
+                            <span class="ml-1 text-xs text-amber-700 font-semibold">OD</span>
+                        </label>
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+
+            document.getElementById('rosterContainer').classList.remove('hidden');
+            document.getElementById('noRosterMsg').classList.add('hidden');
+        }
+
+        function markAll(status) {
+            document.querySelectorAll(`input[type="radio"][value="${status}"]`).forEach(r => r.checked = true);
+        }
+
+        function renderLoadedStudents() {
+            const tbody = document.getElementById('currentStudentsBody');
+            tbody.innerHTML = '';
+            document.getElementById('totalStudentsCount').textContent = studentsData.length;
+
+            studentsData.forEach(s => {
+                const row = document.createElement('tr');
+                row.className = "border-b hover:bg-gray-50";
+                row.innerHTML = `
+                    <td class="p-2 font-mono">${s.Roll_No}</td>
+                    <td class="p-2">${s.Student_Name}</td>
+                    <td class="p-2">${s.Year}</td>
+                    <td class="p-2">${s.Section_Specialization}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Helper: Build Structured Excel Workbook with Merged Centered Headers
+        function buildExcelWorkbook() {
+            const year = document.getElementById('attYear').value;
+            const sec = document.getElementById('attSection').value;
+            const subject = document.getElementById('attSubject').value || "Subject";
+            const hour = document.getElementById('attHour').value;
+            const date = document.getElementById('attDate').value;
+
+            let filtered = [];
+            if (sec === "Combined") {
+                filtered = studentsData.filter(s => s.Year === year);
+            } else {
+                filtered = studentsData.filter(s =>
+                    s.Year === year &&
+                    s.Section_Specialization.toLowerCase() === sec.toLowerCase()
+                );
+            }
+
+            if (filtered.length === 0) {
+                alert("Please click 'Load Student Roster' first before saving.");
+                return null;
+            }
+
+            // File Name Standard: date_subj_class_section_hour
+            const clean = (str) => str.replace(/[\/\\?%*:|"<>]/g, '').trim();
+            const fileNameBase = `${date}_${clean(subject)}_${clean(year)}_${clean(sec)}_${hour}`;
+            const fullFileName = `${fileNameBase}.xlsx`;
+
+            // Array of Arrays for SheetJS Header Format
+            const aoa = [
+                ["R L Institute of Management studies", "", "", ""],
+                [fileNameBase, "", "", ""],
+                ["Date: " + date + " | Hour: " + hour, "", "", ""],
+                ["s.no", "roll no", "name", "attendance status (present / Absent / OD)"]
+            ];
+
+            filtered.forEach((s, idx) => {
+                const checkedRadio = document.querySelector(`input[name="status_${s.Roll_No}"]:checked`);
+                const status = checkedRadio ? checkedRadio.value : "Present";
+                aoa.push([
+                    idx + 1,
+                    s.Roll_No,
+                    s.Student_Name,
+                    status
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+            // Set Merged Range for Rows 1, 2, and 3 across columns A to D
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, // Row 1: R L Institute of Management studies
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }, // Row 2: File Name
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } }  // Row 3: Date & Hour
+            ];
+
+            // Apply Justify Center alignment style to merged headers
+            ['A1', 'A2', 'A3'].forEach(cellRef => {
+                if (ws[cellRef]) {
+                    ws[cellRef].s = {
+                        alignment: { horizontal: "center", vertical: "center" },
+                        font: { bold: true }
+                    };
+                }
+            });
+
+            // Set Column Widths for clean layout
+            ws['!cols'] = [
+                { wch: 8 },  // s.no
+                { wch: 16 }, // roll no
+                { wch: 32 }, // name
+                { wch: 36 }  // attendance status
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+
+            return { wb, fullFileName, fileNameBase };
+        }
+
+        // Export Local Excel File
+        function saveAndExportExcel() {
+            const res = buildExcelWorkbook();
+            if (!res) return;
+            XLSX.writeFile(res.wb, res.fullFileName);
+        }
+
+        // Upload Direct to Google Drive via Apps Script
+        function uploadToDrive() {
+            const url = localStorage.getItem('rlims_drive_url') || DEFAULT_SCRIPT_URL;
+            const res = buildExcelWorkbook();
+            if (!res) return;
+
+            const base64 = XLSX.write(res.wb, { bookType: 'xlsx', type: 'base64' });
+
+            fetch(url, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fileName: res.fullFileName,
+                    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    fileData: base64
+                })
+            }).then(() => {
+                alert(`Attendance file "${res.fullFileName}" successfully uploaded to Google Drive!`);
+            }).catch(err => {
+                alert("Upload error: " + err);
+            });
+        }
+
+        // Student Bulk Import Handler
+        document.getElementById('studentFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const wb = XLSX.read(evt.target.result, { type: 'binary' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                parsedStudentImport = XLSX.utils.sheet_to_json(ws);
+
+                if (parsedStudentImport.length > 0) {
+                    renderPreview('studentPreviewHeader', 'studentPreviewBody', parsedStudentImport);
+                    document.getElementById('studentPreviewContainer').classList.remove('hidden');
+                }
+            };
+            reader.readAsBinaryString(file);
+        });
+
+        function confirmStudentImport() {
+            studentsData = parsedStudentImport;
+            localStorage.setItem('rlims_students_v5', JSON.stringify(studentsData));
+            renderLoadedStudents();
+            alert(`Successfully updated student database (${studentsData.length} students)!`);
+            handleYearChange();
+        }
+
+        function renderPreview(headerId, bodyId, data) {
+            const header = document.getElementById(headerId);
+            const body = document.getElementById(bodyId);
+            header.innerHTML = '';
+            body.innerHTML = '';
+
+            const keys = Object.keys(data[0]);
+            keys.forEach(k => {
+                const th = document.createElement('th');
+                th.className = "p-2 border";
+                th.textContent = k;
+                header.appendChild(th);
+            });
+
+            data.slice(0, 5).forEach(row => {
+                const tr = document.createElement('tr');
+                keys.forEach(k => {
+                    const td = document.createElement('td');
+                    td.className = "p-2 border";
+                    td.textContent = row[k] || '';
+                    tr.appendChild(td);
+                });
+                body.appendChild(tr);
+            });
+        }
+
+        function saveDriveSettings() {
+            const url = document.getElementById('scriptUrl').value.trim();
+            localStorage.setItem('rlims_drive_url', url);
+            alert("Google Drive Integration URL updated!");
+        }
+    </script>
+</body>
+</html>
