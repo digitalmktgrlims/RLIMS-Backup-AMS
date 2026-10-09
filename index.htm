@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+updated_html_content = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RLIMS - Attendance Management System</title>
+    <title>RLIMS - Attendance & Lesson Plan Management System</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS for Excel Operations -->
@@ -14,15 +14,15 @@
     <!-- Header -->
     <header class="bg-blue-900 text-white py-6 shadow-md">
         <div class="container mx-auto px-6">
-            <h1 class="text-3xl font-bold">R L Institute of Management Studies | 2026-27. </h1>
-            <p class="text-blue-200 text-sm mt-1">Backup - Attendance Management System - MBA I Year & MBA II Year | ODD Semester</p>
+            <h1 class="text-3xl font-bold">R L Institute of Management Studies | 2026-27</h1>
+            <p class="text-blue-200 text-sm mt-1">Attendance & Lesson Plan Management System - MBA I Year & MBA II Year | ODD Semester</p>
         </div>
     </header>
 
     <main class="container mx-auto px-6 py-8">
         <!-- Navigation Tabs -->
         <div class="flex border-b border-gray-300 bg-white rounded-t-lg shadow-sm overflow-x-auto">
-            <button onclick="switchTab('attendanceTab')" id="btn-attendanceTab" class="tab-btn px-6 py-3 font-semibold text-blue-900 border-b-2 border-blue-900 whitespace-nowrap">Mark Attendance</button>
+            <button onclick="switchTab('attendanceTab')" id="btn-attendanceTab" class="tab-btn px-6 py-3 font-semibold text-blue-900 border-b-2 border-blue-900 whitespace-nowrap">Mark Attendance & Lesson Plan</button>
             <button onclick="switchTab('studentTab')" id="btn-studentTab" class="tab-btn px-6 py-3 font-semibold text-gray-500 hover:text-blue-900 whitespace-nowrap">Student Roster / Import</button>
             <button onclick="switchTab('staffTab')" id="btn-staffTab" class="tab-btn px-6 py-3 font-semibold text-gray-500 hover:text-blue-900 whitespace-nowrap">Staff Bulk Import</button>
             <button onclick="switchTab('driveTab')" id="btn-driveTab" class="tab-btn px-6 py-3 font-semibold text-gray-500 hover:text-blue-900 whitespace-nowrap">Google Drive Sync</button>
@@ -30,9 +30,9 @@
 
         <div class="bg-white p-6 rounded-b-lg shadow-md min-h-[500px]">
 
-            <!-- TAB 1: MARK ATTENDANCE -->
+            <!-- TAB 1: MARK ATTENDANCE & LESSON PLAN -->
             <div id="attendanceTab" class="tab-content">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">Daily Attendance Entry</h2>
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Daily Attendance & Lesson Plan Entry</h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 bg-gray-50 p-4 rounded-lg border">
                     <div>
@@ -59,7 +59,7 @@
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Hour / Period</label>
-                        <select id="attHour" class="w-full border rounded px-3 py-2 bg-white font-semibold">
+                        <select id="attHour" onchange="handleHourChange()" class="w-full border rounded px-3 py-2 bg-white font-semibold">
                             <option value="1">Hour 1</option>
                             <option value="2">Hour 2</option>
                             <option value="3">Hour 3</option>
@@ -83,6 +83,42 @@
                                 Load Student Roster
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- LESSON PLAN CARD (Design Matched to Image) -->
+                <div id="lessonPlanContainer" class="mb-6 rounded-lg overflow-hidden border border-blue-300 shadow-sm">
+                    <div class="bg-blue-900 text-white font-bold text-center py-2 text-base tracking-wide uppercase">
+                        LESSON PLAN
+                    </div>
+                    <div class="h-1 bg-amber-500"></div>
+                    <div class="p-3 bg-white overflow-x-auto">
+                        <table class="w-full border-collapse border border-blue-400 text-center text-sm">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-800 font-bold border-b border-blue-400">
+                                    <th class="border border-blue-400 p-2.5 w-1/4">Unit</th>
+                                    <th class="border border-blue-400 p-2.5 w-1/4">Chapter No</th>
+                                    <th class="border border-blue-400 p-2.5 w-1/4">Hour's Alloted</th>
+                                    <th class="border border-blue-400 p-2.5 w-1/4">Hour's Taken</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border border-blue-400 p-2">
+                                        <input type="text" id="lpUnit" placeholder="e.g. Unit I" class="w-full text-center border-none focus:ring-1 focus:ring-blue-500 rounded p-1 font-medium text-gray-800">
+                                    </td>
+                                    <td class="border border-blue-400 p-2">
+                                        <input type="text" id="lpChapter" placeholder="e.g. Chapter 2" class="w-full text-center border-none focus:ring-1 focus:ring-blue-500 rounded p-1 font-medium text-gray-800">
+                                    </td>
+                                    <td class="border border-blue-400 p-2">
+                                        <input type="number" id="lpHoursAlloted" placeholder="e.g. 4" class="w-full text-center border-none focus:ring-1 focus:ring-blue-500 rounded p-1 font-medium text-gray-800">
+                                    </td>
+                                    <td class="border border-blue-400 p-2 font-bold text-blue-900">
+                                        <input type="number" id="lpHoursTaken" value="1" class="w-full text-center border-none focus:ring-1 focus:ring-blue-500 rounded p-1 font-bold text-blue-900">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -111,7 +147,7 @@
 
                     <div class="flex flex-wrap gap-4">
                         <button onclick="saveAndExportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded shadow flex items-center gap-2">
-                            <span>📥</span> Save Daily Entry as Excel (.xlsx)
+                            <span>📥</span> Save Attendance & Lesson Plan as Excel (.xlsx)
                         </button>
                         <button onclick="uploadToDrive()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded shadow flex items-center gap-2">
                             <span>☁️</span> Direct Upload to Google Drive
@@ -229,7 +265,7 @@
                 { subject: "Professional Executive Grooming", faculty: "Prof Selvam", type: "General", section: "Section A" }
             ],
             "MBA II Year": [
-                // Core Courses (Combined for all specializations)
+                // Core Courses
                 { subject: "Strategic Management", faculty: "Dr Pugalanthi", type: "Core", section: "Combined" },
                 { subject: "Entrepreneurship", faculty: "Dr Sekar", type: "Core", section: "Combined" },
                 { subject: "Business Optimisation", faculty: "Dr Karthik Babu", type: "Core", section: "Combined" },
@@ -372,6 +408,14 @@
             activeBtn.classList.remove('text-gray-500');
         }
 
+        function handleHourChange() {
+            const hr = document.getElementById('attHour').value;
+            const lpTaken = document.getElementById('lpHoursTaken');
+            if (lpTaken && !lpTaken.value) {
+                lpTaken.value = hr;
+            }
+        }
+
         // Handle Year Switch & Dynamic Subject Population
         function handleYearChange() {
             const year = document.getElementById('attYear').value;
@@ -380,7 +424,6 @@
 
             const courses = COURSE_MAPPING[year] || [];
 
-            // Group 1: Subject Courses
             const courseGroup = document.createElement('optgroup');
             courseGroup.label = "Subject Courses";
 
@@ -412,7 +455,6 @@
                 subjSelect.appendChild(courseGroup);
             }
 
-            // Group 2: Common Entries (Guest Lecture, Seminar, IV, etc.)
             const commonGroup = document.createElement('optgroup');
             commonGroup.label = "Common Events / Activities";
             COMMON_ACTIVITIES.forEach(act => {
@@ -451,7 +493,7 @@
             if (year === "MBA I Year") {
                 secLabel.textContent = "Section";
                 ["Section A", "Section B", "Combined"].forEach(sec => {
-                    if (sec === "Combined" && !isCommonActivity) return; // Only allow combined for common events in Year 1
+                    if (sec === "Combined" && !isCommonActivity) return;
                     const opt = document.createElement('option');
                     opt.value = sec;
                     opt.textContent = sec;
@@ -561,13 +603,20 @@
             });
         }
 
-        // Helper: Build Structured Excel Workbook with Merged Centered Headers
+        // Helper: Build Structured Excel Workbook with Lesson Plan Included
         function buildExcelWorkbook() {
             const year = document.getElementById('attYear').value;
             const sec = document.getElementById('attSection').value;
             const subject = document.getElementById('attSubject').value || "Subject";
             const hour = document.getElementById('attHour').value;
             const date = document.getElementById('attDate').value;
+            const faculty = document.getElementById('attFaculty').value || "N/A";
+
+            // Lesson Plan values
+            const lpUnit = document.getElementById('lpUnit').value || "-";
+            const lpChapter = document.getElementById('lpChapter').value || "-";
+            const lpHoursAlloted = document.getElementById('lpHoursAlloted').value || "-";
+            const lpHoursTaken = document.getElementById('lpHoursTaken').value || "1";
 
             let filtered = [];
             if (sec === "Combined") {
@@ -584,7 +633,6 @@
                 return null;
             }
 
-            // File Name Standard: date_subj_class_section_hour
             const clean = (str) => str.replace(/[\/\\?%*:|"<>]/g, '').trim();
             const fileNameBase = `${date}_${clean(subject)}_${clean(year)}_${clean(sec)}_${hour}`;
             const fullFileName = `${fileNameBase}.xlsx`;
@@ -593,7 +641,12 @@
             const aoa = [
                 ["R L Institute of Management studies", "", "", ""],
                 [fileNameBase, "", "", ""],
-                ["Date: " + date + " | Hour: " + hour, "", "", ""],
+                ["Date: " + date + " | Hour: " + hour + " | Faculty: " + faculty, "", "", ""],
+                ["", "", "", ""],
+                ["LESSON PLAN", "", "", ""],
+                ["Unit", "Chapter No", "Hour's Alloted", "Hour's Taken"],
+                [lpUnit, lpChapter, lpHoursAlloted, lpHoursTaken],
+                ["", "", "", ""],
                 ["s.no", "roll no", "name", "attendance status (present / Absent / OD)"]
             ];
 
@@ -610,15 +663,16 @@
 
             const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-            // Set Merged Range for Rows 1, 2, and 3 across columns A to D
+            // Set Merged Range for Rows 1, 2, 3, and 5 across columns A to D
             ws['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, // Row 1: R L Institute of Management studies
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, // Row 1: Title
                 { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }, // Row 2: File Name
-                { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } }  // Row 3: Date & Hour
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } }, // Row 3: Metadata
+                { s: { r: 4, c: 0 }, e: { r: 4, c: 3 } }  // Row 5: LESSON PLAN Title
             ];
 
-            // Apply Justify Center alignment style to merged headers
-            ['A1', 'A2', 'A3'].forEach(cellRef => {
+            // Alignment and style
+            ['A1', 'A2', 'A3', 'A5'].forEach(cellRef => {
                 if (ws[cellRef]) {
                     ws[cellRef].s = {
                         alignment: { horizontal: "center", vertical: "center" },
@@ -627,16 +681,16 @@
                 }
             });
 
-            // Set Column Widths for clean layout
+            // Column Widths
             ws['!cols'] = [
-                { wch: 8 },  // s.no
-                { wch: 16 }, // roll no
-                { wch: 32 }, // name
-                { wch: 36 }  // attendance status
+                { wch: 10 }, // s.no / Unit
+                { wch: 18 }, // roll no / Chapter No
+                { wch: 34 }, // name / Hour's Alloted
+                { wch: 38 }  // status / Hour's Taken
             ];
 
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+            XLSX.utils.book_append_sheet(wb, ws, "Attendance & Lesson Plan");
 
             return { wb, fullFileName, fileNameBase };
         }
@@ -666,7 +720,7 @@
                     fileData: base64
                 })
             }).then(() => {
-                alert(`Attendance file "${res.fullFileName}" successfully uploaded to Google Drive!`);
+                alert(`Attendance & Lesson Plan file "${res.fullFileName}" successfully uploaded to Google Drive!`);
             }).catch(err => {
                 alert("Upload error: " + err);
             });
